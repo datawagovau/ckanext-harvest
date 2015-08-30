@@ -404,8 +404,6 @@ class CKANHarvester(HarvesterBase):
                         package_dict['extras'][key] = value
 	        """
             log.debug('CKAN Harvester import stage: Transferring fields to custom schema')
-            # Ewwww mooom he hardcoded fields
-            # Shhh my darling, he knows what he's doing
 
             # Stolen from fetch_stage
             self._set_config(harvest_object.job.source.config)
@@ -418,19 +416,7 @@ class CKANHarvester(HarvesterBase):
             
             package_dict['data_portal'] = data_portal_url 
             package_dict['landing_page'] = dataset_url
-            package_dict['license_id'] = harvest_object.license_id 
-            package_dict['doi'] = harvest_object.doi 
-            package_dict['citation'] = harvest_object.citation 
-            package_dict['author'] = harvest_object.author
-            package_dict['author_email'] = harvest_object.author_email
-            package_dict['maintainer'] = harvest_object.maintainer 
-            package_dict['maintainer_email'] = harvest_object.maintainer_email
-            package_dict['published_on'] = harvest_object.published_on
-            package_dict['last_updated_on'] = harvest_object.last_updated_on
-            package_dict['update_frequency'] = harvest_object.update_frequency
-            package_dict['data_temporal_extent_begin'] = harvest_object.data_temporal_extent_begin
-            package_dict['data_temporal_extent_end'] = harvest_object.data_temporal_extent_end
-            package_dict['spatial'] = harvest_object.spatial
+            
 
             # Clear remote url_type for resources (eg datastore, upload) as we
             # are only creating normal resources with links to the remote ones
@@ -438,26 +424,6 @@ class CKANHarvester(HarvesterBase):
                 resource.pop('url_type', None)
 
             result = self._create_or_update_package(package_dict,harvest_object)
-
-            if result and self.config.get('read_only',False) == True:
-
-                package = model.Package.get(package_dict['id'])
-
-                # Clear default permissions
-		        # FIXME raises AttributeError("'module' object has no attribute 'clear_user_roles'",)
-		        # hence disabling:
-                #model.clear_user_roles(package)
-
-                # Setup harvest user as admin
-                user_name = self.config.get('user',u'harvest')
-                user = model.User.get(user_name)
-                pkg_role = model.PackageRole(package=package, user=user, role=model.Role.ADMIN)
-
-                # Other users can only read
-                for user_name in (u'visitor',u'logged_in'):
-                    user = model.User.get(user_name)
-                    pkg_role = model.PackageRole(package=package, user=user, role=model.Role.READER)
-
 
             return True
         except ValidationError,e:
