@@ -370,7 +370,8 @@ class CKANHarvester(HarvesterBase):
                 if not 'groups' in package_dict:
                     package_dict['groups'] = []
                 package_dict['groups'].extend([g for g in default_groups if g not in package_dict['groups']])
-
+		
+	    """
             # Find any extras whose values are not strings and try to convert
             # them to strings, as non-string extras are not allowed anymore in
             # CKAN 2.0.
@@ -401,6 +402,8 @@ class CKANHarvester(HarvesterBase):
                                      dataset_id=package_dict['id'])
 
                         package_dict['extras'][key] = value
+	    """
+	    package_dict['extras'] = {}
 
             # Clear remote url_type for resources (eg datastore, upload) as we
             # are only creating normal resources with links to the remote ones
