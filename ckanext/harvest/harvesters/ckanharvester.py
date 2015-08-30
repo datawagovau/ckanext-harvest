@@ -371,7 +371,7 @@ class CKANHarvester(HarvesterBase):
                     package_dict['groups'] = []
                 package_dict['groups'].extend([g for g in default_groups if g not in package_dict['groups']])
 		
-	    """
+	        """
             # Find any extras whose values are not strings and try to convert
             # them to strings, as non-string extras are not allowed anymore in
             # CKAN 2.0.
@@ -402,8 +402,35 @@ class CKANHarvester(HarvesterBase):
                                      dataset_id=package_dict['id'])
 
                         package_dict['extras'][key] = value
-	    """
-	    package_dict['extras'] = {}
+	        """
+            log.debug('CKAN Harvester import stage: Transferring fields to custom schema')
+            # Ewwww mooom he hardcoded fields
+            # Shhh my darling, he knows what he's doing
+
+            # Stolen from fetch_stage
+            self._set_config(harvest_object.job.source.config)
+            data_portal_url = harvest_object.source.url.rstrip('/')
+            dataset_url = data_portal_url + '/dataset/' + harvest_object.guid
+	        
+            # no extras in custom schema
+            # FIXME handle remote extras - e.g. append to notes?
+            package_dict['extras'] = {}
+            
+            package_dict['data_portal'] = data_portal_url 
+            package_dict['landing_page'] = dataset_url
+            package_dict['license_id'] = harvest_object.license_id 
+            package_dict['doi'] = harvest_object.doi 
+            package_dict['citation'] = harvest_object.citation 
+            package_dict['author'] = harvest_object.author
+            package_dict['author_email'] = harvest_object.author_email
+            package_dict['maintainer'] = harvest_object.maintainer 
+            package_dict['maintainer_email'] = harvest_object.maintainer_email
+            package_dict['published_on'] = harvest_object.published_on
+            package_dict['last_updated_on'] = harvest_object.last_updated_on
+            package_dict['update_frequency'] = harvest_object.update_frequency
+            package_dict['data_temporal_extent_begin'] = harvest_object.data_temporal_extent_begin
+            package_dict['data_temporal_extent_end'] = harvest_object.data_temporal_extent_end
+            package_dict['spatial'] = harvest_object.spatial
 
             # Clear remote url_type for resources (eg datastore, upload) as we
             # are only creating normal resources with links to the remote ones
@@ -417,7 +444,9 @@ class CKANHarvester(HarvesterBase):
                 package = model.Package.get(package_dict['id'])
 
                 # Clear default permissions
-                model.clear_user_roles(package)
+		        # FIXME raises AttributeError("'module' object has no attribute 'clear_user_roles'",)
+		        # hence disabling:
+                #model.clear_user_roles(package)
 
                 # Setup harvest user as admin
                 user_name = self.config.get('user',u'harvest')
