@@ -415,7 +415,17 @@ class CKANHarvester(HarvesterBase):
             
             # landing_page for harvested datasets is their original dataset page
             package_dict['landing_page'] = dataset_url
-
+            try:
+                package_dict['spatial'] = package_dict['extras']['spatial'] or ''
+                package_dict['last_updated_on'] = package_dict['extras']['last_updated_on'] or ''
+                package_dict['update_frequency'] = package_dict['extras']['update_frequency'] or ''
+                package_dict['published_on'] = package_dict['extras']['published_on'] or ''
+                package_dict['data_temporal_extent_begin'] = package_dict['extras']['data_temporal_extent_begin'] or ''
+                package_dict['data_temporal_extent_end'] = package_dict['extras']['data_temporal_extent_end'] or ''
+                package_dict['doi'] = package_dict['extras']['doi'] or ''
+                package_dict['citation'] = package_dict['extras']['citation'] or ''
+            except:
+                log.debug('Error harvesting dataset {0}\nDetails: {1}'.format(dataset_url, json.dumps(package_dict)))
 
             # custom fields need to go to top level:
             # package_dict['extras']['my_field'] becomes package_dict['my_field']
@@ -423,20 +433,23 @@ class CKANHarvester(HarvesterBase):
             # FIXME handle different source and target schemas
             #        e.g. through field mapping in harvest config?
             # FIXME customise fields to your ckanext-scheming dataset schema
-            fields = ['doi', 'citation', 'author', 'author_email', 
-                'maintainer', 'maintainer_email', 'last_updated_on', 'update_frequency',
-                'data_temporal_extent_begin', 'data_temporal_extent_end', 'spatial']
-            for field in fields:
-		if field in package_dict['extras'].keys():
-	    	    package_dict[field] = package_dict['extras'][field]
-                    package_dict['extras'].pop(field, None)
-            
+            #fields = ['doi', 'citation', 'author', 'author_email', 'published_on',
+            #    'maintainer', 'maintainer_email', 'last_updated_on', 'update_frequency',
+            #    'data_temporal_extent_begin', 'data_temporal_extent_end']
+            #for field in fields:
+            #	try:
+	    #	    package_dict[field] = package_dict['extras'][field]
+            #    except:
+            #        log.debug('Source schema is missing field {0}, moving on'.format(field))
+            #        #package_dict['extras'].pop(field, None)
+            #
             # append remainder of package_dict to package notes
-            for field in package_dict['extras'].keys():
-                package_dict['notes'] += "\n###{0}\n{1}".format(field.title(), str(package_dict['extras'][field]))
+            #for field in package_dict['extras'].keys():
+            #    package_dict['notes'] += "\n###{0}\n{1}".format(field.title(), str(package_dict['extras'][field]))
 
 	    # Finally, drop extras as scheming doesn't allow extras
-	    package_dict.pop('extras', None)
+	    #package_dict.pop('extras', None)
+	    package_dict['extras'] = {}
             
             #log.debug('CKAN Harvester import stage: end of scheming mods')
 
