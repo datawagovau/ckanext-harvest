@@ -371,7 +371,6 @@ class CKANHarvester(HarvesterBase):
                     package_dict['groups'] = []
                 package_dict['groups'].extend([g for g in default_groups if g not in package_dict['groups']])
 		
-	        """
             # Find any extras whose values are not strings and try to convert
             # them to strings, as non-string extras are not allowed anymore in
             # CKAN 2.0.
@@ -402,21 +401,45 @@ class CKANHarvester(HarvesterBase):
                                      dataset_id=package_dict['id'])
 
                         package_dict['extras'][key] = value
-	        """
-            log.debug('CKAN Harvester import stage: Transferring fields to custom schema')
 
-            # Stolen from fetch_stage
+            log.debug('CKAN Harvester import stage: Modified to support ckanext-scheming')
+            log.debug('Found package dict: {0}'.format(json.dumps(package_dict)))
+
+            # Grab harvest source info about source portal and package id
             self._set_config(harvest_object.job.source.config)
             data_portal_url = harvest_object.source.url.rstrip('/')
             dataset_url = data_portal_url + '/dataset/' + harvest_object.guid
-	        
-            # no extras in custom schema
-            # FIXME handle remote extras - e.g. append to notes?
-            package_dict['extras'] = {}
-            
+
+            # data_portal indicates harvested dataset by pointing to source portal
             package_dict['data_portal'] = data_portal_url 
-            package_dict['landing_page'] = dataset_url
             
+            # landing_page for harvested datasets is their original dataset page
+            package_dict['landing_page'] = dataset_url
+
+
+            # custom fields need to go to top level:
+            # package_dict['extras']['my_field'] becomes package_dict['my_field']
+            # FIXME read fields from ckanext-scheming
+            # FIXME handle different source and target schemas
+            #        e.g. through field mapping in harvest config?
+            # FIXME customise fields to your ckanext-scheming dataset schema
+            fields = ['doi', 'citation', 'author', 'author_email', 
+                'maintainer', 'maintainer_email', 'last_updated_on', 'update_frequency',
+                'data_temporal_extent_begin', 'data_temporal_extent_end', 'spatial']
+            for field in fields:
+		if field in package_dict['extras'].keys():
+	    	    package_dict[field] = package_dict['extras'][field]
+                    package_dict['extras'].pop(field, None)
+            
+            # append remainder of package_dict to package notes
+            for field in package_dict['extras'].keys():
+                package_dict['notes'] += "\n###{0}\n{1}".format(field.title(), str(package_dict['extras'][field]))
+
+	    # Finally, drop extras as scheming doesn't allow extras
+	    package_dict.pop('extras', None)
+            
+            #log.debug('CKAN Harvester import stage: end of scheming mods')
+
 
             # Clear remote url_type for resources (eg datastore, upload) as we
             # are only creating normal resources with links to the remote ones
